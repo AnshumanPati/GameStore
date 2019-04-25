@@ -64,9 +64,11 @@ class OrderForm(Form):  # Create Order Form
 
 
 
-
-
 @app.route('/')
+def loginpage():
+   return redirect(url_for('login'))
+
+@app.route('/home')
 def index():
     form = OrderForm(request.form)
     # Create cursor
@@ -114,22 +116,23 @@ def login():
                session['logged_in'] = True
                session['uid'] = uid
                session['s_name'] = name
-               x = '1'
-               cur.execute("UPDATE users SET online=%s WHERE id=%s", (x, uid))
 
                return redirect(url_for('index'))
 
             else:
-               flash('Incorrect password', 'danger')
+               flash('      Incorrect password, please try again!', 'danger')
                return render_template('login.html')
 
         else:
-            flash('Username not found', 'danger')
+            flash('  Username not found, please try again', 'danger')
             # Close connection
             cur.close()
             return render_template('login.html')
     return render_template('login.html')
 
+@app.route('/out')
+def logout():
+    return redirect(url_for('login'))
 
 
 @app.route('/regsuccess')
@@ -145,8 +148,11 @@ def regprocess():
       uname = request.form['username']
       password = sha256_crypt.encrypt(str(request.form['password']))
       email = request.form['email']
+      street = request.form['street']
+      city = request.form['city']
+      pincode = request.form['pincode']
       cur = mysql.connection.cursor()
-      cur.execute("INSERT INTO users(fname, lname, email, username, password) VALUES(%s, %s, %s, %s, %s)",(fname, lname, email, uname, password))
+      cur.execute("INSERT INTO users(fname, lname, email, username, password, street, city, pincode) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",(fname, lname, email, uname, password, street, city, pincode))
       mysql.connection.commit()
       cur.close()
       ans = request.form.to_dict()
@@ -202,28 +208,20 @@ def xboxdesc():
       curso = mysql.connection.cursor()
       curso.execute("SELECT * FROM products WHERE id=%s", (product_id,))
       product = curso.fetchall()
-
+      return render_template('product_detail.html', games=product)
+   elif 'cart' in request.args:
+      product_id = request.args['cart']    
       if 'uid' in session:
+         curso = mysql.connection.cursor()
          uid = session['uid']
-         # Create cursor
-         cur = mysql.connection.cursor()
-         cur.execute("SELECT * FROM product_view WHERE user_id=%s AND product_id=%s", (uid, product_id))
-         result = cur.fetchall()
-         if result:
-            now = datetime.datetime.now()
-            now_time = now.strftime("%y-%m-%d %H:%M:%S")
-            cur.execute("UPDATE product_view SET date=%s WHERE user_id=%s AND product_id=%s",
-                        (now_time, uid, product_id))
-         else:
-            cur.execute("INSERT INTO product_view(user_id, product_id) VALUES(%s, %s)", (uid, product_id))
-            mysql.connection.commit()
-      return render_template('xbox_desc.html', games=product)
-   elif 'order' in request.args:
-      product_id = request.args['order']
-      curso = mysql.connection.cursor()
-      curso.execute("SELECT * FROM products WHERE id=%s", (product_id,))
-      product = curso.fetchall()
-      return render_template('order_product.html', games=product, form=form)
+         curso.execute("INSERT IGNORE INTO cart VALUES(%s, %s)", (uid, product_id,))
+         mysql.connection.commit()
+         print(uid)
+         print(product_id)
+         curso.execute("SELECT * FROM products WHERE id in (select pid from cart where uid = %s)", (uid,))
+         product = curso.fetchall()
+         flash('Product Added to Cart', 'success')
+      return redirect(url_for('cart'))
    return render_template('xbox.html', xbox=products, form=form)
 
 @app.route('/pc', methods=['GET', 'POST'])
@@ -271,28 +269,20 @@ def pcdesc():
       curso = mysql.connection.cursor()
       curso.execute("SELECT * FROM products WHERE id=%s", (product_id,))
       product = curso.fetchall()
-
+      return render_template('product_detail.html', games=product)
+   elif 'cart' in request.args:
+      product_id = request.args['cart']    
       if 'uid' in session:
+         curso = mysql.connection.cursor()
          uid = session['uid']
-         # Create cursor
-         cur = mysql.connection.cursor()
-         cur.execute("SELECT * FROM product_view WHERE user_id=%s AND product_id=%s", (uid, product_id))
-         result = cur.fetchall()
-         if result:
-            now = datetime.datetime.now()
-            now_time = now.strftime("%y-%m-%d %H:%M:%S")
-            cur.execute("UPDATE product_view SET date=%s WHERE user_id=%s AND product_id=%s",
-                        (now_time, uid, product_id))
-         else:
-            cur.execute("INSERT INTO product_view(user_id, product_id) VALUES(%s, %s)", (uid, product_id))
-            mysql.connection.commit()
-      return render_template('pc_desc.html', games=product)
-   elif 'order' in request.args:
-      product_id = request.args['order']
-      curso = mysql.connection.cursor()
-      curso.execute("SELECT * FROM products WHERE id=%s", (product_id,))
-      product = curso.fetchall()
-      return render_template('order_product.html', games=product, form=form)
+         curso.execute("INSERT IGNORE INTO cart VALUES(%s, %s)", (uid, product_id,))
+         mysql.connection.commit()
+         print(uid)
+         print(product_id)
+         curso.execute("SELECT * FROM products WHERE id in (select pid from cart where uid = %s)", (uid,))
+         product = curso.fetchall()
+         flash('Product Added to Cart', 'success')
+      return redirect(url_for('cart'))
    return render_template('pc.html', pc=products, form=form)
 
 @app.route('/ps4', methods=['GET', 'POST'])
@@ -340,29 +330,96 @@ def ps4desc():
       curso = mysql.connection.cursor()
       curso.execute("SELECT * FROM products WHERE id=%s", (product_id,))
       product = curso.fetchall()
-
+      return render_template('product_detail.html', games=product)
+   elif 'cart' in request.args:
+      product_id = request.args['cart']    
       if 'uid' in session:
+         curso = mysql.connection.cursor()
          uid = session['uid']
-         # Create cursor
-         cur = mysql.connection.cursor()
-         cur.execute("SELECT * FROM product_view WHERE user_id=%s AND product_id=%s", (uid, product_id))
-         result = cur.fetchall()
-         if result:
-            now = datetime.datetime.now()
-            now_time = now.strftime("%y-%m-%d %H:%M:%S")
-            cur.execute("UPDATE product_view SET date=%s WHERE user_id=%s AND product_id=%s",
-                        (now_time, uid, product_id))
-         else:
-            cur.execute("INSERT INTO product_view(user_id, product_id) VALUES(%s, %s)", (uid, product_id))
-            mysql.connection.commit()
-      return render_template('ps4_desc.html', games=product)
-   elif 'order' in request.args:
-      product_id = request.args['order']
-      curso = mysql.connection.cursor()
-      curso.execute("SELECT * FROM products WHERE id=%s", (product_id,))
-      product = curso.fetchall()
-      return render_template('order_product.html', games=product, form=form)
+         curso.execute("INSERT IGNORE INTO cart VALUES(%s, %s)", (uid, product_id,))
+         mysql.connection.commit()
+         print(uid)
+         print(product_id)
+         curso.execute("SELECT * FROM products WHERE id in (select pid from cart where uid = %s)", (uid,))
+         product = curso.fetchall()
+         flash('Product Added to Cart', 'success')
+         curso.close()
+      return redirect(url_for('cart'))
    return render_template('ps4.html', ps4=products, form=form)
+
+@app.route('/cart', methods=['GET', 'POST'])
+def cart():
+   if 'uid' in session:
+      curso = mysql.connection.cursor()
+      uid = session['uid']
+      curso.execute("SELECT * FROM products WHERE id in (select pid from cart where uid = %s)", (uid,))
+      product = curso.fetchall()
+      curso.close()
+
+   if 'order' in request.args:
+      if 'uid' in session:
+         cur = mysql.connection.cursor()
+         curs = mysql.connection.cursor()
+         userid = session['uid']
+         cur.execute("SELECT pid, pName, price, category, available FROM cart, products where id = pid AND uid = %s", (userid, ))
+         cartrow = cur.fetchone()
+         while cartrow is not None:
+            curs.execute("INSERT INTO orders(pid, uid, pName, console, price) "
+               "VALUES(%s, %s, %s, %s, %s)", 
+               (cartrow['pid'], userid, cartrow['pName'], cartrow['category'], cartrow['price']))
+            curs.execute("UPDATE products SET available = %s WHERE id = %s", (cartrow['available']-1, cartrow['pid'],))
+            cartrow = cur.fetchone()          
+            mysql.connection.commit()
+         cur.execute("DELETE FROM cart where uid = %s", (userid,))
+         mysql.connection.commit()
+         cur.close()
+         curs.close()
+      return redirect(url_for('orders'))
+   return render_template('cart.html', result=product)
+
+@app.route('/orders')
+def orders():
+    curso = mysql.connection.cursor()
+    if 'uid' in session:
+      userid = session['uid']
+      order_rows = curso.execute("SELECT * FROM orders WHERE uid = %s", (userid,))
+      result = curso.fetchall()
+    
+    return render_template('all_orders.html', result=result)
+
+
+@app.route('/search', methods=['POST', 'GET'])
+def search():
+    form = OrderForm(request.form)
+    if 'q' in request.args:
+      q = request.args['q']
+      # Create cursor
+
+      if q == '':
+        flash('Enter a valid Search Value', 'danger')
+        return redirect(url_for('index'))
+
+      cur = mysql.connection.cursor()
+      # Get message
+      query_string = "SELECT * FROM products WHERE pName LIKE %s and category = %s ORDER BY id ASC"
+      values = 'xbox'
+      cur.execute(query_string, ('%' + q + '%', values,))
+      xbox = cur.fetchall()
+      values = 'pc'
+      cur.execute(query_string, ('%' + q + '%', values,))
+      pc = cur.fetchall()
+      values = 'ps4'
+      cur.execute(query_string, ('%' + q + '%', values,))
+      ps4 = cur.fetchall()
+
+      flash('Showing result for: ' + q, 'success')
+      cur.close()
+
+      return render_template('search.html', ps4=ps4, xbox=xbox, pc=pc , form=form)
+    else:
+      flash('Search again', 'danger')
+      return render_template('search.html')
+
 
 
 if __name__ == '__main__':

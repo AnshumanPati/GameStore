@@ -56,9 +56,10 @@
 							<span class="input-group-text"><i class="fas fa-key"></i></span>
 						</div>
 						<input name="password" type="password" class="form-control" placeholder="password" >
+
 					</div>
 					<div class="row align-items-center remember">
-						<input name="check" type="checkbox" >Remember Me
+						{% include 'includes/_flashmsg.html' %}
 					</div>
 					<div class="form-group">
 						<input name="action" type="submit" value="Login" class="btn float-right login_btn" >

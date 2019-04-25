@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+{% block body %}
+<!-- Page Content -->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3 my-4">
+            <div class="list-group">
+                <a href="/xbox" class="list-group-item">XBOX</a>
+                <a href="/ps4" class="list-group-item">PS4</a>
+                <a href="/pc" class="list-group-item">PC</a>
+            </div>
+        </div>
+        <!-- /.col-lg-3 -->
+        <div class="col-lg-9">
+            <div class="row">
+                {% for product in games %}
+                <div class="col-lg-6">
+                    <div class="card mt-4">
+                        <img class="card-img-top img-fluid"
+                             src="static/image/product/{{product.category}}/{{product.picture}}" alt="">
+                    </div>
+                </div>
+                <!-- /.card -->
+                <div class="col-lg-6">
+                    <div class="card card-outline-secondary my-4">
+                        <div class="card-header">
+                            Product Details
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">{{ product.pName}}</h3>
+                            <style>
+                            h5{
+                                 text-transform: uppercase;
+                                }
+                            p{
+                                text-transform: capitalize;
+                            }
+                            </style>
+                            <h5>{{ product.category}}</h5>
+                             </style>
+                             <br>
+                            <p class="card-text">Description: {{ product.description}}</p>
+                            <p class="card-text">Developer: {{ product.developer}}</p>
+                            <p class="card-text">Rating: {{ product.rating}}</p>
+                            <br>
+                            <h4>Rs. {{ product.price}}</h4>
+                            <a href="/{{product.category}}?cart={{product.id}}" class="btn btn-success">Add to Cart</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                <!-- /.card -->
+
+            </div>
+        </div>
+        <!-- /.col-lg-9 -->
+
+
+    </div>
+    <!-- /.row -->
+
+</div>
+<!-- /.container -->
+{% endblock %}
